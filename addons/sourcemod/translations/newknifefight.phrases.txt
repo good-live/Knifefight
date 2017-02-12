@@ -1,48 +1,57 @@
 "Phrases"
 {
-	"Menu Titel"
-	{
-		"en"		"Do you want to fight?"
-	}
-	"Menu Yes"
-	{
-		"en"		"Yes"
-	}
-	"Menu No"
-	{
-		"en"		"No"
-	}
-	"Accepted"
-	{
-		"#format"	"{1:N}"
-		"en"		"{1} has accepted the fight!"
-	}
-	"Declined (Chicken)"
-	{
-		"#format"	"{1:N}"
-		"en"		"{1} is a chicken."
-	}
-	"Countdown"
-	{
-		"#format"	"{1:i}"
-		"en"		"Fight starts in {1}."
-	}
-	"GOGOGO"
-	{
-		"en"		"GOGOGO"
-	}
-	"TimeLeft"
-	{
-		"#format"	"{1:i}"
-		"en"		"{1} secounds left!"
-	}
-	"Time Ended"
-	{
-		"en"		"The time has ended both players got slayed!"
-	}
-	"Lost the round"
-	{
-		"#format"	"{1:N}"
-		"en"		"{1} lost the fight."
-	}
+    "accepted"
+    {
+        "#format"   "{1:N}"
+        "en"        "{1} has accepted the fight!"
+    }
+
+    "countdown"
+    {
+        "#format"   "{1:i}"
+        "en"        "Fight starts in {1}."
+    }
+
+    "declined"
+    {
+        "#format"   "{1:N}"
+        "en"        "{1} is a chicken."
+    }
+
+    "gogogo"
+    {
+        "en"        "GOGOGO"
+    }
+
+    "lostround"
+    {
+        "#format"   "{1:N}"
+        "en"        "{1} lost the fight."
+    }
+
+    "no"
+    {
+        "en"        "No"
+    }
+
+    "titel"
+    {
+        "en"        "Do you want to fight?"
+    }
+
+    "yes"
+    {
+        "en"        "Yes"
+    }
+
+    "end"
+    {
+        "en"        "The time has ended both players got slayed!"
+    }
+
+    "timeleft"
+    {
+        "#format"   "{1:i}"
+        "en"        "{1} secounds left!"
+    }
 }
