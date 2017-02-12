@@ -331,7 +331,7 @@ public Action CS_OnTerminateRound(float &delay, CSRoundEndReason &reason)
 
 bool IsClientValid(int client)
 {
-	if (!(0 < client <= MaxClients) || !IsClientConnected(client))
+	if (!(0 < client <= MaxClients) || !IsClientConnected(client) || !IsClientInGame(client))
 		return false;
 	
 	return true;
