@@ -3,55 +3,55 @@
     "accepted"
     {
         "#format"   "{1:N}"
-        "en"        "{1} has accepted the fight!"
+        "en"        "[{green}PLG{default}] {green}{1} {default}has accepted the fight!"
     }
 
     "countdown"
     {
         "#format"   "{1:i}"
-        "en"        "Fight starts in {1}."
+        "en"        "<font size='30' color='#00ff00'>Fight starts in {1} seconds</font>"
     }
 
     "declined"
     {
         "#format"   "{1:N}"
-        "en"        "{1} is a chicken."
+        "en"        "[{green}PLG{default}] {green}{1} {default} is a chicken."
     }
 
     "gogogo"
     {
-        "en"        "GOGOGO"
+        "en"        "<font color='#00ff00' size='30'> GOGOGO!</font>"
     }
 
     "lostround"
     {
         "#format"   "{1:N}"
-        "en"        "{1} lost the fight."
+        "en"        "[{green}PLG{default}] {green}{1} {default} lost the fight."
     }
 
     "no"
     {
-        "en"        "No"
+        "en"        "No, I'm a chicken!"
     }
 
     "titel"
     {
-        "en"        "Do you want to fight?"
+        "en"        "Do you want to knife it out?"
     }
 
     "yes"
     {
-        "en"        "Yes"
+        "en"        "Yes, Fight to the death!"
     }
 
     "end"
     {
-        "en"        "The time has ended both players got slayed!"
+        "en"        "[{green}PLG{default}] The time has ended both players got slayed!"
     }
 
     "timeleft"
     {
         "#format"   "{1:i}"
-        "en"        "{1} secounds left!"
+        "en"        "<font color='#00ff00' size='30'> {1} secounds left!</font>"
     }
 }
