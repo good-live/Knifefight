@@ -208,6 +208,9 @@ void StartFight()
 	SetEntityHealth(g_iT, 100);
 	SetEntityHealth(g_iCT, 100);
 	
+	SetEntProp(g_iT, Prop_Data, "m_ArmorValue", 100, 1);
+	SetEntProp(g_iCT, Prop_Data, "m_ArmorValue", 100, 1);
+	
 	//Swap to knife
 	ChangePlayerWeaponSlot(g_iCT, 2);
 	ChangePlayerWeaponSlot(g_iT, 2);
