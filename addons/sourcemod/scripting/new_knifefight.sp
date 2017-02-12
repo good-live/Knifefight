@@ -205,6 +205,8 @@ void StartFight()
 		TeleportEntity(g_iCT, g_fSpawns[1], NULL_VECTOR, NULL_VECTOR);
 	}
 	
+	SetEntityHealth(g_iT, 100);
+	SetEntityHealth(g_iCT, 100);
 	
 	//Swap to knife
 	ChangePlayerWeaponSlot(g_iCT, 2);
