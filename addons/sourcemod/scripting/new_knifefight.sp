@@ -13,7 +13,7 @@
 #include <emitsoundany>
 
 #define SOUND_BLIP "buttons/blip1.wav"
-#define SOUND_CHICKEN "ambient/creatures/chicken_death01.wav"
+#define SOUND_CHICKEN "play ambient/creatures/chicken_death_01.wav"
 
 #pragma newdecls required
 
@@ -70,7 +70,6 @@ public void OnMapStart()
  	g_halosprite = PrecacheModel("materials/sprites/halo01.vmt");
  	
 	PrecacheSound(SOUND_BLIP, true);
-	PrecacheSound(SOUND_CHICKEN, true);
 }
 
 public void OnClientPutInServer(int i)
@@ -124,9 +123,9 @@ void DisplaySelectionMenu(int client)
 	char sYes[32];
 	char sNo[32];
 	
-	Format(sTitel, sizeof(sTitel), "%T", "Menu Titel", client);
-	Format(sYes, sizeof(sYes), "%T", "Menu Yes", client);
-	Format(sNo, sizeof(sNo), "%T", "Menu No", client);
+	Format(sTitel, sizeof(sTitel), "%T", "titel", client);
+	Format(sYes, sizeof(sYes), "%T", "yes", client);
+	Format(sNo, sizeof(sNo), "%T", "no", client);
 	
 	Menu menu = new Menu(ConfirmMenuHandler);
 	menu.SetTitle(sTitel);
@@ -145,19 +144,35 @@ public int ConfirmMenuHandler(Menu menu, MenuAction action, int client, int para
 		if (StrEqual(sParam, "yes", false))
 		{
 			g_bConfirmed[client] = true;
-			CPrintToChatAll("%t", "Accepted", client);
+			CPrintToChatAll("%t", "accepted", client);
 			CheckConfirmations();
 		}
 		else
 		{
-			CPrintToChatAll("%t", "Declined (Chicken)", client);
-			EmitSoundToAllAny(SOUND_CHICKEN);
+			CPrintToChatAll("%t", "declined", client);
+			for (int i = 0; i <= MaxClients; i++)
+			{
+				if(IsClientValid(i))
+				{
+					ClientCommand(i, "playgamesound Music.StopAllMusic");
+					ClientCommand(i, "play error.wav");
+					ClientCommand(i, SOUND_CHICKEN);  
+				}
+			}
 		}
 	}
 	else if (action == MenuAction_Cancel)
 	{
-		CPrintToChatAll("%t", "Declined (Chicken)", client);
-		EmitSoundToAllAny(SOUND_CHICKEN);
+		CPrintToChatAll("%t", "declined", client);
+		for (int i = 0; i <= MaxClients; i++)
+		{
+			if(IsClientValid(i))
+			{
+				ClientCommand(i, "playgamesound Music.StopAllMusic");
+				ClientCommand(i, "play error.wav");
+				ClientCommand(i, SOUND_CHICKEN);  
+			}
+		}
 	}
 	else if (action == MenuAction_End)
 		delete menu;
@@ -205,8 +220,8 @@ public Action Timer_Countdown(Handle timer)
 		secounds = g_cCountdown.IntValue;
 	if (IsClientValid(g_iCT) && IsPlayerAlive(g_iCT) && IsClientValid(g_iT) && IsPlayerAlive(g_iT))
 	{
-		PrintHintText(g_iCT, "%T", "Countdown", g_iCT, --secounds);
-		PrintHintText(g_iT, "%T", "Countdown", g_iT, secounds);
+		PrintHintText(g_iCT, "%T", "countdown", g_iCT, --secounds);
+		PrintHintText(g_iT, "%T", "countdown", g_iT, secounds);
 	} else {
 		return Plugin_Stop;
 	}
@@ -216,8 +231,8 @@ public Action Timer_Countdown(Handle timer)
 	g_iStatus = 2;
 	secounds = g_cCountdown.IntValue;
 	
-	PrintHintText(g_iCT, "%T", "GOGOGO", g_iCT);
-	PrintHintText(g_iT, "%T", "GOGOGO", g_iT);
+	PrintHintText(g_iCT, "%T", "gogogo", g_iCT);
+	PrintHintText(g_iT, "%T", "gogogo", g_iT);
 	
 	CreateTimer(1.0, Timer_FightTime, _, TIMER_REPEAT);
 	
@@ -231,22 +246,20 @@ public Action Timer_FightTime(Handle Timer)
 		secounds = g_cFightTime.IntValue;
 	if (IsClientValid(g_iCT) && IsPlayerAlive(g_iCT) && IsClientValid(g_iT) && IsPlayerAlive(g_iT))
 	{
-		if (secounds % 2)
-		{
-			Beacon(g_iCT);
-			Beacon(g_iT);
-		}
+
+		Beacon(g_iCT);
+		Beacon(g_iT);
 		
 		if (secounds > 0)
 		{
-			PrintHintText(g_iCT, "%T", "TimeLeft", g_iCT, --secounds);
-			PrintHintText(g_iT, "%T", "TimeLeft", g_iT, secounds);
+			PrintHintText(g_iCT, "%T", "timeleft", g_iCT, --secounds);
+			PrintHintText(g_iT, "%T", "timeleft", g_iT, secounds);
 			return Plugin_Continue;
 		} else {
 			ForcePlayerSuicide(g_iCT);
 			ForcePlayerSuicide(g_iT);
 			
-			CPrintToChatAll("%t", "Time Ended");
+			CPrintToChatAll("%t", "end");
 			
 			secounds = g_cFightTime.IntValue;
 			return Plugin_Stop;
@@ -307,7 +320,7 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 
 void EndFight(int looser)
 {
-	CPrintToChatAll("%t", "Lost the round", looser);
+	CPrintToChatAll("%t", "lostround", looser);
 	g_iStatus = 0;
 }
 
