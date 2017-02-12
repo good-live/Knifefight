@@ -1,0 +1,396 @@
+#pragma semicolon 1
+
+#define DEBUG
+
+#define PLUGIN_AUTHOR "good_live"
+#define PLUGIN_VERSION "1.00"
+
+#include <sourcemod>
+#include <sdktools>
+#include <sdkhooks>
+#include <cstrike>
+#include <multicolors>
+#include <emitsoundany>
+
+#define SOUND_BLIP "buttons/blip1.wav"
+#define SOUND_CHICKEN "ambient/creatures/chicken_death01.wav"
+
+#pragma newdecls required
+
+public Plugin myinfo = 
+{
+	name = "Knifefight", 
+	author = PLUGIN_AUTHOR, 
+	description = "1v1 Knifefight on round end", 
+	version = PLUGIN_VERSION, 
+	url = "painlessgaming.eu"
+};
+
+int g_iStatus = 0;
+int g_iCT;
+int g_iT;
+
+int g_beamsprite;
+int g_halosprite;
+
+bool g_bConfirmed[MAXPLAYERS + 1];
+bool g_bLoaded;
+
+float g_fSpawns[2][3];
+
+ConVar g_cCountdown;
+ConVar g_cFightTime;
+
+public void OnPluginStart()
+{
+	HookEvent("player_death", EventPlayerDeath, EventHookMode_Post);
+	
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientValid(i))
+		{
+			SDKHook(i, SDKHook_OnTakeDamage, OnTakeDamage);
+		}
+	}
+	
+	RegConsoleCmd("sm_addspawn", Command_AddSpawn, "", ADMFLAG_ROOT);
+	
+	g_cCountdown = CreateConVar("knifefight_countdown", "4", "The time in secounds for the countdown!");
+	g_cFightTime = CreateConVar("knifefight_fighttime", "20", "The time in secounds for the fighttime!");
+	
+	AutoExecConfig(true);
+	LoadTranslations("newknifefight.phrases");
+}
+
+public void OnMapStart()
+{
+	LoadSpawns();
+	
+	g_beamsprite = PrecacheModel("materials/sprites/laser.vmt");
+ 	g_halosprite = PrecacheModel("materials/sprites/halo01.vmt");
+ 	
+	PrecacheSound(SOUND_BLIP, true);
+	PrecacheSound(SOUND_CHICKEN, true);
+}
+
+public void OnClientPutInServer(int i)
+{
+	SDKHook(i, SDKHook_OnTakeDamage, OnTakeDamage);
+}
+
+public Action EventPlayerDeath(Event event, const char[] name, bool dontBroadcast)
+{
+	
+	if (g_iStatus)
+	{
+		//There is a fight and somebody won :)
+		int looser = GetClientOfUserId(event.GetInt("userid"));
+		EndFight(looser);
+	} else {
+		//Check the amount of alive ct's/t's
+		int ct, t;
+		int team;
+		for (int i = 1; i <= MaxClients; i++) {
+			if (IsClientValid(i) && IsPlayerAlive(i))
+			{
+				team = GetClientTeam(i);
+				if (team == 3)
+				{
+					g_iCT = i;
+					ct++;
+				} else if (team == 2) {
+					g_iT = i;
+					t++;
+				}
+			}
+		}
+		
+		if (ct == 1 && t == 1)
+		{
+			//There is a 1v1 Situation
+			g_bConfirmed[g_iCT] = false;
+			g_bConfirmed[g_iT] = false;
+			
+			DisplaySelectionMenu(g_iCT);
+			DisplaySelectionMenu(g_iT);
+			
+		}
+	}
+}
+
+void DisplaySelectionMenu(int client)
+{
+	char sTitel[32];
+	char sYes[32];
+	char sNo[32];
+	
+	Format(sTitel, sizeof(sTitel), "%T", "Menu Titel", client);
+	Format(sYes, sizeof(sYes), "%T", "Menu Yes", client);
+	Format(sNo, sizeof(sNo), "%T", "Menu No", client);
+	
+	Menu menu = new Menu(ConfirmMenuHandler);
+	menu.SetTitle(sTitel);
+	menu.AddItem("yes", sYes);
+	menu.AddItem("no", sNo);
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int ConfirmMenuHandler(Menu menu, MenuAction action, int client, int param)
+{
+	if (action == MenuAction_Select)
+	{
+		char sParam[32];
+		GetMenuItem(menu, param, sParam, sizeof(sParam));
+		
+		if (StrEqual(sParam, "yes", false))
+		{
+			g_bConfirmed[client] = true;
+			CPrintToChatAll("%t", "Accepted", client);
+			CheckConfirmations();
+		}
+		else
+		{
+			CPrintToChatAll("%t", "Declined (Chicken)", client);
+			EmitSoundToAllAny(SOUND_CHICKEN);
+		}
+	}
+	else if (action == MenuAction_Cancel)
+	{
+		CPrintToChatAll("%t", "Declined (Chicken)", client);
+		EmitSoundToAllAny(SOUND_CHICKEN);
+	}
+	else if (action == MenuAction_End)
+		delete menu;
+	
+	return 0;
+}
+
+void CheckConfirmations()
+{
+	if (!g_iStatus)
+	{
+		if (g_bConfirmed[g_iCT] && g_bConfirmed[g_iT])
+		{
+			if (IsClientValid(g_iCT) && IsPlayerAlive(g_iCT) && IsClientValid(g_iT) && IsPlayerAlive(g_iT))
+				StartFight();
+		}
+	}
+}
+
+void StartFight()
+{
+	g_iStatus = 1;
+	if (!g_bLoaded)
+	{
+		float ctPos[3];
+		GetClientAbsOrigin(g_iCT, ctPos);
+		TeleportEntity(g_iT, ctPos, NULL_VECTOR, NULL_VECTOR);
+	} else {
+		TeleportEntity(g_iT, g_fSpawns[0], NULL_VECTOR, NULL_VECTOR);
+		TeleportEntity(g_iCT, g_fSpawns[1], NULL_VECTOR, NULL_VECTOR);
+	}
+	
+	
+	//Swap to knife
+	ChangePlayerWeaponSlot(g_iCT, 2);
+	ChangePlayerWeaponSlot(g_iT, 2);
+	
+	CreateTimer(1.0, Timer_Countdown, _, TIMER_REPEAT);
+}
+
+public Action Timer_Countdown(Handle timer)
+{
+	static int secounds = -1;
+	if (secounds == -1)
+		secounds = g_cCountdown.IntValue;
+	if (IsClientValid(g_iCT) && IsPlayerAlive(g_iCT) && IsClientValid(g_iT) && IsPlayerAlive(g_iT))
+	{
+		PrintHintText(g_iCT, "%T", "Countdown", g_iCT, --secounds);
+		PrintHintText(g_iT, "%T", "Countdown", g_iT, secounds);
+	} else {
+		return Plugin_Stop;
+	}
+	if (secounds > 0)
+		return Plugin_Continue;
+	
+	g_iStatus = 2;
+	secounds = g_cCountdown.IntValue;
+	
+	PrintHintText(g_iCT, "%T", "GOGOGO", g_iCT);
+	PrintHintText(g_iT, "%T", "GOGOGO", g_iT);
+	
+	CreateTimer(1.0, Timer_FightTime, _, TIMER_REPEAT);
+	
+	return Plugin_Stop;
+}
+
+public Action Timer_FightTime(Handle Timer)
+{
+	static int secounds = -1;
+	if (secounds == -1)
+		secounds = g_cFightTime.IntValue;
+	if (IsClientValid(g_iCT) && IsPlayerAlive(g_iCT) && IsClientValid(g_iT) && IsPlayerAlive(g_iT))
+	{
+		if (secounds % 2)
+		{
+			Beacon(g_iCT);
+			Beacon(g_iT);
+		}
+		
+		if (secounds > 0)
+		{
+			PrintHintText(g_iCT, "%T", "TimeLeft", g_iCT, --secounds);
+			PrintHintText(g_iT, "%T", "TimeLeft", g_iT, secounds);
+			return Plugin_Continue;
+		} else {
+			ForcePlayerSuicide(g_iCT);
+			ForcePlayerSuicide(g_iT);
+			
+			CPrintToChatAll("%t", "Time Ended");
+			
+			secounds = g_cFightTime.IntValue;
+			return Plugin_Stop;
+		}
+		
+	} else {
+		secounds = g_cFightTime.IntValue;
+		return Plugin_Stop;
+	}
+}
+
+void Beacon(int client)
+{
+	int redColor[4] =  { 255, 75, 75, 255 };
+	int blueColor[4] =  { 75, 75, 255, 255 };
+	int greyColor[4] =  { 128, 128, 128, 255 };
+	int team = GetClientTeam(client);
+	float fPos[3];
+	GetClientAbsOrigin(client, fPos);
+	fPos[2] += 10;
+	
+	TE_SetupBeamRingPoint(fPos, 10.0, 375.0, g_beamsprite, g_halosprite, 0, 15, 0.5, 5.0, 0.0, greyColor, 10, 0);
+	TE_SendToAll();
+	
+	if (team == 2)
+	{
+		TE_SetupBeamRingPoint(fPos, 10.0, 375.0, g_beamsprite, g_halosprite, 0, 10, 0.6, 10.0, 0.5, redColor, 10, 0);
+	}
+	else if (team == 3)
+	{
+		TE_SetupBeamRingPoint(fPos, 10.0, 375.0, g_beamsprite, g_halosprite, 0, 10, 0.6, 10.0, 0.5, blueColor, 10, 0);
+	}
+	TE_SendToAll();
+	
+	GetClientEyePosition(client, fPos);
+	EmitAmbientSound(SOUND_BLIP, fPos, client, SNDLEVEL_RAIDSIREN);
+}
+
+public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+{
+	if (g_iStatus && IsClientValid(attacker))
+	{
+		if (g_iStatus == 1)
+			return Plugin_Handled;
+		
+		char sWeapon[32];
+		
+		GetClientWeapon(attacker, sWeapon, sizeof(sWeapon));
+		
+		if ((StrContains(sWeapon, "knife", false) != -1) || (StrContains(sWeapon, "bayonet", false) != -1))
+			return Plugin_Continue;
+		else
+			return Plugin_Handled;
+	}
+	
+	return Plugin_Continue;
+}
+
+void EndFight(int looser)
+{
+	CPrintToChatAll("%t", "Lost the round", looser);
+	g_iStatus = 0;
+}
+
+public Action CS_OnTerminateRound(float &delay, CSRoundEndReason &reason)
+{
+	g_iStatus = 0;
+}
+
+bool IsClientValid(int client)
+{
+	if (!(0 < client <= MaxClients) || !IsClientConnected(client))
+		return false;
+	
+	return true;
+}
+
+//Thanks to bl4nk
+stock bool ChangePlayerWeaponSlot(int iClient, int iSlot) {
+	int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
+	if (iWeapon > MaxClients) {
+		SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeapon);
+		return true;
+	}
+	
+	return false;
+}
+
+//Thanks to Z1pcore
+void LoadSpawns()
+{
+	g_bLoaded = false;
+	char sMap[64];
+	
+	GetCurrentMap(sMap, sizeof(sMap));
+	
+	char sPath[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/knifefight/%s.txt", sMap);
+	
+	Handle hFile = OpenFile(sPath, "r");
+	
+	char sBuffer[512];
+	char sDatas[3][32];
+	
+	if (hFile != null)
+	{
+		for (int i = 0; i < 2; i++)
+		{
+			if (!ReadFileLine(hFile, sBuffer, sizeof(sBuffer)))
+			{
+				g_bLoaded = false;
+				return;
+			}
+			ExplodeString(sBuffer, ";", sDatas, 3, 32);
+			
+			g_fSpawns[i][0] = StringToFloat(sDatas[0]);
+			g_fSpawns[i][1] = StringToFloat(sDatas[1]);
+			g_fSpawns[i][2] = StringToFloat(sDatas[2]);
+		}
+		g_bLoaded = true;
+		CloseHandle(hFile);
+	}
+}
+
+public Action Command_AddSpawn(int client, int args)
+{
+	float fPos[3];
+	GetClientAbsOrigin(client, fPos);
+	
+	char sMap[64];
+	GetCurrentMap(sMap, sizeof(sMap));
+	
+	char sPath[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/knifefight/%s.txt", sMap);
+	PrintToChatAll("Path: %s", sPath);
+	Handle hFile = OpenFile(sPath, "a");
+	
+	if (hFile != null)
+	{
+		WriteFileLine(hFile, "%.2f;%.2f;%.2f;", fPos[0], fPos[1], fPos[2]);
+		CloseHandle(hFile);
+		ReplyToCommand(client, "Succesfully saved spawn!");
+		return Plugin_Handled;
+	}
+	ReplyToCommand(client, "Failed to save spawn");
+	return Plugin_Handled;
+} 
