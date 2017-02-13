@@ -141,7 +141,13 @@ void DisplaySelectionMenu(int client)
 public int ConfirmMenuHandler(Menu menu, MenuAction action, int client, int param)
 {
 	if(g_bNewRound)
+	{
 		delete menu;
+		return 0;
+	}
+		
+	if(!IsClientValid(client))
+		return 0;
 		
 	if (action == MenuAction_Select)
 	{
