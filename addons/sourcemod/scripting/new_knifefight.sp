@@ -41,6 +41,8 @@ float g_fSpawns[2][3];
 ConVar g_cCountdown;
 ConVar g_cFightTime;
 
+bool g_bNewRound = false;
+
 public void OnPluginStart()
 {
 	HookEvent("player_death", EventPlayerDeath, EventHookMode_Post);
@@ -110,6 +112,8 @@ public Action EventPlayerDeath(Event event, const char[] name, bool dontBroadcas
 			g_bConfirmed[g_iCT] = false;
 			g_bConfirmed[g_iT] = false;
 			
+			g_bNewRound = false;
+			
 			DisplaySelectionMenu(g_iCT);
 			DisplaySelectionMenu(g_iT);
 			
@@ -136,6 +140,9 @@ void DisplaySelectionMenu(int client)
 
 public int ConfirmMenuHandler(Menu menu, MenuAction action, int client, int param)
 {
+	if(g_bNewRound)
+		delete menu;
+		
 	if (action == MenuAction_Select)
 	{
 		char sParam[32];
