@@ -344,6 +344,7 @@ void EndFight(int looser)
 
 public Action CS_OnTerminateRound(float &delay, CSRoundEndReason &reason)
 {
+	g_bNewRound = true;
 	g_iStatus = 0;
 }
 
