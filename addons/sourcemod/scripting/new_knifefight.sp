@@ -142,7 +142,8 @@ public int ConfirmMenuHandler(Menu menu, MenuAction action, int client, int para
 {
 	if(g_bNewRound)
 	{
-		delete menu;
+		if (action == MenuAction_End)
+			delete menu;
 		return 0;
 	}
 		
