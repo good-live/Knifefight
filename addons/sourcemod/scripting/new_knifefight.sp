@@ -3,7 +3,7 @@
 #define DEBUG
 
 #define PLUGIN_AUTHOR "good_live"
-#define PLUGIN_VERSION "1.00"
+#define PLUGIN_VERSION "1.0.1"
 
 #include <sourcemod>
 #include <sdktools>
@@ -234,6 +234,8 @@ void StartFight()
 
 public Action Timer_Countdown(Handle timer)
 {
+	if(g_iStatus != 1)
+		return Plugin_Stop;
 	static int secounds = -1;
 	if (secounds == -1)
 		secounds = g_cCountdown.IntValue;
@@ -260,6 +262,9 @@ public Action Timer_Countdown(Handle timer)
 
 public Action Timer_FightTime(Handle Timer)
 {
+	if(g_iStatus != 2)
+		return Plugin_Stop;
+		
 	static int secounds = -1;
 	if (secounds == -1)
 		secounds = g_cFightTime.IntValue;
