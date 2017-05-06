@@ -403,6 +403,12 @@ public Action CS_OnTerminateRound(float &delay, CSRoundEndReason &reason)
 {
 	g_bNewRound = true;
 	g_iStatus = 0;
+	
+	Call_StartForward(g_hKnifeEndForward);
+	Call_PushCell(g_iCT);
+	Call_PushCell(g_iT);
+	Call_PushCell(-1);
+	Call_Finish();
 }
 
 bool IsClientValid(int client)
