@@ -61,7 +61,7 @@ public void OnPluginStart()
 	g_cFightTime = CreateConVar("knifefight_fighttime", "20", "The time in secounds for the fighttime!");
 	
 	AutoExecConfig(true);
-	LoadTranslations("newknifefight.phrases");
+	LoadTranslations("knifefight.phrases");
 }
 
 public void OnMapStart()
