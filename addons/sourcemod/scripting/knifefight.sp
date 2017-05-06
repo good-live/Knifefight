@@ -43,8 +43,17 @@ ConVar g_cFightTime;
 
 bool g_bNewRound = false;
 
+Handle g_hCountdownForward;
+Handle g_hFightStartForward;
+Handle g_hKnifeEndForward;
+
 public void OnPluginStart()
 {
+	
+	g_hCountdownForward = CreateGlobalForward("KF_OnCountdownStart", ET_Event, Param_Cell, Param_Cell, Param_Cell);
+	g_hFightStartForward = CreateGlobalForward("KF_OnFightStart", ET_Event, Param_Cell, Param_Cell);
+	g_hKnifeEndForward = CreateGlobalForward("KF_OnFightEnd", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
+	
 	HookEvent("player_death", EventPlayerDeath, EventHookMode_Post);
 	
 	for (int i = 1; i <= MaxClients; i++)
@@ -208,6 +217,21 @@ void CheckConfirmations()
 
 void StartFight()
 {
+	Action result;
+	
+	Call_StartForward(g_hCountdownForward);
+	Call_PushCell(g_iCT);
+	Call_PushCell(g_iT);
+	Call_PushCell(g_cCountdown.IntValue);
+	Call_Finish(result);
+	
+	//Aborted
+	if(result >= Plugin_Stop)
+	{
+		g_iStatus = 0;
+		return;
+	}
+	
 	g_iStatus = 1;
 	if (!g_bLoaded)
 	{
@@ -239,6 +263,7 @@ public Action Timer_Countdown(Handle timer)
 	static int secounds = -1;
 	if (secounds == -1)
 		secounds = g_cCountdown.IntValue;
+	
 	if (IsClientValid(g_iCT) && IsPlayerAlive(g_iCT) && IsClientValid(g_iT) && IsPlayerAlive(g_iT))
 	{
 		PrintHintText(g_iCT, "%T", "countdown", g_iCT, --secounds);
@@ -248,6 +273,21 @@ public Action Timer_Countdown(Handle timer)
 	}
 	if (secounds > 0)
 		return Plugin_Continue;
+	
+	
+	Action result;
+	
+	Call_StartForward(g_hFightStartForward);
+	Call_PushCell(g_iCT);
+	Call_PushCell(g_iT);
+	Call_Finish(result);
+	
+	//Aborted
+	if(result >= Plugin_Stop)
+	{
+		g_iStatus = 0;
+		return Plugin_Stop;
+	}
 	
 	g_iStatus = 2;
 	secounds = g_cCountdown.IntValue;
@@ -284,6 +324,12 @@ public Action Timer_FightTime(Handle Timer)
 			ForcePlayerSuicide(g_iT);
 			
 			CPrintToChatAll("%t", "end");
+	
+			Call_StartForward(g_hKnifeEndForward);
+			Call_PushCell(g_iCT);
+			Call_PushCell(g_iT);
+			Call_PushCell(-1);
+			Call_Finish();
 			
 			secounds = g_cFightTime.IntValue;
 			return Plugin_Stop;
@@ -344,6 +390,11 @@ public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 
 void EndFight(int looser)
 {
+	Call_StartForward(g_hKnifeEndForward);
+	Call_PushCell(g_iCT);
+	Call_PushCell(g_iT);
+	Call_PushCell(looser);
+	Call_Finish();
 	CPrintToChatAll("%t", "lostround", looser);
 	g_iStatus = 0;
 }
