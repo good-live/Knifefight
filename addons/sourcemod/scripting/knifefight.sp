@@ -3,7 +3,7 @@
 #define DEBUG
 
 #define PLUGIN_AUTHOR "good_live"
-#define PLUGIN_VERSION "1.0.2"
+#define PLUGIN_VERSION "1.0.3"
 
 #include <sourcemod>
 #include <sdktools>
@@ -29,6 +29,8 @@ public Plugin myinfo =
 int g_iStatus = 0;
 int g_iCT;
 int g_iT;
+int g_iCountdown = -1;
+int g_iFightTime = -1;
 
 int g_beamsprite;
 int g_halosprite;
@@ -253,6 +255,9 @@ void StartFight()
 	ChangePlayerWeaponSlot(g_iCT, 2);
 	ChangePlayerWeaponSlot(g_iT, 2);
 	
+	g_iFightTime = g_cFightTime.IntValue;
+	g_iCountdown = g_cCountdown.IntValue;
+	
 	CreateTimer(1.0, Timer_Countdown, _, TIMER_REPEAT);
 }
 
@@ -260,18 +265,15 @@ public Action Timer_Countdown(Handle timer)
 {
 	if(g_iStatus != 1)
 		return Plugin_Stop;
-	static int secounds = -1;
-	if (secounds == -1)
-		secounds = g_cCountdown.IntValue;
 	
 	if (IsClientValid(g_iCT) && IsPlayerAlive(g_iCT) && IsClientValid(g_iT) && IsPlayerAlive(g_iT))
 	{
-		PrintHintText(g_iCT, "%T", "countdown", g_iCT, --secounds);
-		PrintHintText(g_iT, "%T", "countdown", g_iT, secounds);
+		PrintHintText(g_iCT, "%T", "countdown", g_iCT, --g_iCountdown);
+		PrintHintText(g_iT, "%T", "countdown", g_iT, g_iCountdown);
 	} else {
 		return Plugin_Stop;
 	}
-	if (secounds > 0)
+	if (g_iCountdown > 0)
 		return Plugin_Continue;
 	
 	
@@ -290,7 +292,6 @@ public Action Timer_Countdown(Handle timer)
 	}
 	
 	g_iStatus = 2;
-	secounds = g_cCountdown.IntValue;
 	
 	PrintHintText(g_iCT, "%T", "gogogo", g_iCT);
 	PrintHintText(g_iT, "%T", "gogogo", g_iT);
@@ -305,19 +306,16 @@ public Action Timer_FightTime(Handle Timer)
 	if(g_iStatus != 2)
 		return Plugin_Stop;
 		
-	static int secounds = -1;
-	if (secounds == -1)
-		secounds = g_cFightTime.IntValue;
 	if (IsClientValid(g_iCT) && IsPlayerAlive(g_iCT) && IsClientValid(g_iT) && IsPlayerAlive(g_iT))
 	{
 
 		Beacon(g_iCT);
 		Beacon(g_iT);
 		
-		if (secounds > 0)
+		if (g_iFightTime > 0)
 		{
-			PrintHintText(g_iCT, "%T", "timeleft", g_iCT, --secounds);
-			PrintHintText(g_iT, "%T", "timeleft", g_iT, secounds);
+			PrintHintText(g_iCT, "%T", "timeleft", g_iCT, --g_iFightTime);
+			PrintHintText(g_iT, "%T", "timeleft", g_iT, g_iFightTime);
 			return Plugin_Continue;
 		} else {
 			ForcePlayerSuicide(g_iCT);
@@ -331,12 +329,10 @@ public Action Timer_FightTime(Handle Timer)
 			Call_PushCell(-1);
 			Call_Finish();
 			
-			secounds = g_cFightTime.IntValue;
 			return Plugin_Stop;
 		}
 		
 	} else {
-		secounds = g_cFightTime.IntValue;
 		return Plugin_Stop;
 	}
 }
